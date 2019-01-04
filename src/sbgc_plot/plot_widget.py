@@ -5,7 +5,7 @@ import roslib
 from python_qt_binding import loadUi
 from python_qt_binding.QtCore import Qt, QTimer, qWarning, Slot
 from python_qt_binding.QtGui import QIcon
-from python_qt_binding.QtWidgets import QAction, QMenu, QWidget
+from python_qt_binding.QtWidgets import QAction, QMenu, QWidget, QStackedWidget
 
 import rospy
 
@@ -84,30 +84,31 @@ def is_plottable(topic_name):
 class PlotWidget(QWidget):
     _redraw_interval = 40
 
-    def __init__(self, initial_topics = ["/gimbal/pitch/data", "/gimbal/yaw/data"], start_paused=False):
-        
-        print("Iniitial topics have been set, starting...\n")
+    def __init__(self, widget_name='PlotWidget', initial_topics=None, start_paused=False):
+        # print("Iniitial topics have been set, starting...\n")
         super(PlotWidget, self).__init__()
-        self.setObjectName('PlotWidget')
+        # print("widget_name", widget_name)
+        self.setObjectName(widget_name)
 
-        self._initial_topics = ["/gimbal/pitch/data", "/gimbal/yaw/data"]
+        self._initial_topics = initial_topics
 
         rp = rospkg.RosPack()
-        ui_file = os.path.join(rp.get_path('sbgc_plot'), 'resource', 'plot.ui')
+        ui_file = os.path.join(rp.get_path('sbgc_plot'), 'resource', widget_name + 'plot.ui')
+        
         loadUi(ui_file, self)
-        self.subscribe_topic_button.setIcon(QIcon.fromTheme('list-add'))
-        self.remove_topic_button.setIcon(QIcon.fromTheme('list-remove'))
+        # self.subscribe_topic_button.setIcon(QIcon.fromTheme('list-add'))
+        # self.remove_topic_button.setIcon(QIcon.fromTheme('list-remove'))
         self.pause_button.setIcon(QIcon.fromTheme('media-playback-pause'))
         self.clear_button.setIcon(QIcon.fromTheme('edit-clear'))
         self.data_plot = None
 
-        self.subscribe_topic_button.setEnabled(False)
+        # self.subscribe_topic_button.setEnabled(False)
         if start_paused:
             self.pause_button.setChecked(True)
 
-        self._topic_completer = TopicCompleter(self.topic_edit)
-        self._topic_completer.update_topics()
-        self.topic_edit.setCompleter(self._topic_completer)
+        # self._topic_completer = TopicCompleter(self.topic_edit)
+        # self._topic_completer.update_topics()
+        # self.topic_edit.setCompleter(self._topic_completer)
 
         self._start_time = rospy.get_time()
         self._rosdata = {}
@@ -134,7 +135,7 @@ class PlotWidget(QWidget):
 
         if self._initial_topics:
             for topic_name in self._initial_topics:
-                print("Adding topic", topic_name);
+                # print("Adding topic", topic_name);
                 self.add_topic(topic_name)
             self._initial_topics = None
         else:
@@ -178,24 +179,24 @@ class PlotWidget(QWidget):
             topic_name = str(droped_item.data(0, Qt.UserRole))
         self.add_topic(topic_name)
 
-    @Slot(str)
-    def on_topic_edit_textChanged(self, topic_name):
-        # on empty topic name, update topics
-        if topic_name in ('', '/'):
-            self._topic_completer.update_topics()
+    # @Slot(str)
+    # def on_topic_edit_textChanged(self, topic_name):
+    #     # on empty topic name, update topics
+    #     if topic_name in ('', '/'):
+    #         self._topic_completer.update_topics()
 
-        plottable, message = is_plottable(topic_name)
-        self.subscribe_topic_button.setEnabled(plottable)
-        self.subscribe_topic_button.setToolTip(message)
+    #     plottable, message = is_plottable(topic_name)
+    #     self.subscribe_topic_button.setEnabled(plottable)
+    #     self.subscribe_topic_button.setToolTip(message)
 
-    @Slot()
-    def on_topic_edit_returnPressed(self):
-        if self.subscribe_topic_button.isEnabled():
-            self.add_topic(str(self.topic_edit.text()))
+    # @Slot()
+    # def on_topic_edit_returnPressed(self):
+    #     if self.subscribe_topic_button.isEnabled():
+    #         self.add_topic(str(self.topic_edit.text()))
 
-    @Slot()
-    def on_subscribe_topic_button_clicked(self):
-        self.add_topic(str(self.topic_edit.text()))
+    # @Slot()
+    # def on_subscribe_topic_button_clicked(self):
+    #     self.add_topic(str(self.topic_edit.text()))
 
     @Slot(bool)
     def on_pause_button_clicked(self, checked):
@@ -226,28 +227,28 @@ class PlotWidget(QWidget):
                 self.data_plot.redraw()
 
     def _subscribed_topics_changed(self):
-        self._update_remove_topic_menu()
+        # self._update_remove_topic_menu()
         if not self.pause_button.isChecked():
             # if pause button is not pressed, enable timer based on subscribed topics
             self.enable_timer(self._rosdata)
         self.data_plot.redraw()
 
-    def _update_remove_topic_menu(self):
-        def make_remove_topic_function(x):
-            return lambda: self.remove_topic(x)
+    # def _update_remove_topic_menu(self):
+    #     def make_remove_topic_function(x):
+    #         return lambda: self.remove_topic(x)
 
-        self._remove_topic_menu.clear()
-        for topic_name in sorted(self._rosdata.keys()):
-            action = QAction(topic_name, self._remove_topic_menu)
-            action.triggered.connect(make_remove_topic_function(topic_name))
-            self._remove_topic_menu.addAction(action)
+    #     self._remove_topic_menu.clear()
+    #     for topic_name in sorted(self._rosdata.keys()):
+    #         action = QAction(topic_name, self._remove_topic_menu)
+    #         action.triggered.connect(make_remove_topic_function(topic_name))
+    #         self._remove_topic_menu.addAction(action)
 
-        if len(self._rosdata) > 1:
-            all_action = QAction('All', self._remove_topic_menu)
-            all_action.triggered.connect(self.clean_up_subscribers)
-            self._remove_topic_menu.addAction(all_action)
+    #     if len(self._rosdata) > 1:
+    #         all_action = QAction('All', self._remove_topic_menu)
+    #         all_action.triggered.connect(self.clean_up_subscribers)
+    #         self._remove_topic_menu.addAction(all_action)
 
-        self.remove_topic_button.setMenu(self._remove_topic_menu)
+        # self.remove_topic_button.setMenu(self._remove_topic_menu)
 
     def add_topic(self, topic_name):
         topics_changed = False

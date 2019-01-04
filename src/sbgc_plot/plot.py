@@ -14,14 +14,16 @@ from .data_plot import DataPlot
 class Plot(Plugin):
 
     def __init__(self, context):
+        # print("Plot(Plugin)")
         super(Plot, self).__init__(context)
         self.setObjectName('Plot')
 
         self._context = context
 
         self._args = self._parse_args(context.argv())
-        self._widget = PlotWidget(
-            initial_topics=self._args.topics, start_paused=self._args.start_paused)
+        
+        self._widget = PlotWidget(widget_name='RotorWidget',
+            initial_topics=["/gimbal/pitch/data", "/gimbal/yaw/data"], start_paused=self._args.start_paused)
         self._data_plot = DataPlot(self._widget)
 
         # disable autoscaling of X, and set a sane default range
@@ -32,8 +34,50 @@ class Plot(Plugin):
         self._widget.switch_data_plot_widget(self._data_plot)
         if context.serial_number() > 1:
             self._widget.setWindowTitle(
-                self._widget.windowTitle() + (' (%d)' % context.serial_number()))
+                self._widget.windowTitle() + "__DFUQ__" +  (' (%d)' % context.serial_number()))
+        
+
+
+
+        self._widget2 = PlotWidget(widget_name='GyroWidget',
+            initial_topics=["/gimbal/gyro/x", "/gimbal/gyro/y", "/gimbal/gyro/z"], start_paused=self._args.start_paused)
+        self._data_plot2 = DataPlot(self._widget2)
+
+        # disable autoscaling of X, and set a sane default range
+        self._data_plot2.set_autoscale(x=False)
+        self._data_plot2.set_autoscale(y=DataPlot.SCALE_EXTEND | DataPlot.SCALE_VISIBLE)
+        self._data_plot2.set_xlim([0, 10.0])
+
+        self._widget2.switch_data_plot_widget(self._data_plot2)
+        if context.serial_number() > 1:
+            self._widget2.setWindowTitle(
+                self._widget2.windowTitle() + (' (%d)' % (context.serial_number()+1)))
+        
+
+
+
+        self._widget3 = PlotWidget(widget_name='AccWidget',
+            initial_topics=["/gimbal/acc/x", "/gimbal/acc/y", "/gimbal/acc/z"], start_paused=self._args.start_paused)
+        self._data_plot3 = DataPlot(self._widget3)
+
+        # disable autoscaling of X, and set a sane default range
+        self._data_plot3.set_autoscale(x=False)
+        self._data_plot3.set_autoscale(y=DataPlot.SCALE_EXTEND | DataPlot.SCALE_VISIBLE)
+        self._data_plot3.set_xlim([0, 10.0])
+
+        self._widget3.switch_data_plot_widget(self._data_plot3)
+        if context.serial_number() > 1:
+            self._widget3.setWindowTitle(
+                self._widget3.windowTitle() + (' (%d)' % (context.serial_number()+2)))
+        
+
+
+
         context.add_widget(self._widget)
+        # print("adding_widget")
+        context.add_widget(self._widget2)
+        # print("adding_widget")
+        context.add_widget(self._widget3)
 
     def _parse_args(self, argv):
         parser = argparse.ArgumentParser(prog='sbgc_plot', add_help=False)

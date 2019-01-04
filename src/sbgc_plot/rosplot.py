@@ -67,7 +67,7 @@ class ROSData(object):
         self.lock = threading.Lock()
         self.buff_x = []
         self.buff_y = []
-
+        # print("ROSData")
         topic_type, real_topic, fields = get_topic_type(topic)
         if topic_type is not None:
             self.field_evals = generate_field_evals(fields)
